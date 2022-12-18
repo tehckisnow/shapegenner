@@ -4,7 +4,7 @@ Notes go here...
 
 See Demo here:
 
-- [Link](https://www.tehckisnow.github.io/shapegenner/index.html)
+- [Link](https://tehckisnow.github.io/shapegenner/index.html)
 
 
 TODO:
