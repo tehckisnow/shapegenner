@@ -1,23 +1,3 @@
-//TODO:
-// simple functions to create each basic primitive
-// simple functions to EDIT each basic primitive
-// link reference to these edit functions for easy utility and auto reference to this
-// set up all params that will be used
-// set up randomizer and link to params
-// set up configuration file to be able to easily set all parameters
-// Each new shape is a different color
-// colors are pulled from a palette, support typing in color codes for custom palettes
-// consider accessing coolors API if it is accessible, or webscraping?
-// or write a script for generating pleasing palettes (this might be tough)
-// Accept "current" as an acceptable value
-// Support more shapes: Ellipse, Star, Polygon, Line
-// Support transformations to objects
-// replace objects with <g> ?
-// finish shape.Transform so that multiple transforms do not override one another
-// convert individual transform functions to use the new shape.Transform so they do not override one another
-
-
-
 
 function SplitString(listString, separater=" ")
 {
@@ -197,12 +177,11 @@ let svgManager =
     {
       let shapeParams = canvas.GenShape(canvas.defaultParameterRanges);
       let shape = canvas.Build(shapeParams);
-      //svgManager.SetRandomPos2(shape, pwidth, pheight, -1);
-      svgManager.SetRandomPos2(shape, 50, 50, -1);
+      shape.SetRandomPos();
       return shape;
     };
 
-    canvas.palette = palette;
+    canvas.palette = palette != null ? palette : svgManager.defaultParameterRanges().fillColors;
     canvas.strokePalette = strokePalette != null ? strokePalette : palette;
 
     return canvas;
@@ -220,7 +199,7 @@ let svgManager =
     newShape.SetX = (x) => { svgManager.SetX(newShape, x); };
     newShape.SetY = (y) => { svgManager.SetY(newShape, y); };
     newShape.SetPos = (x, y) => { svgManager.SetPos(newShape, x, y); };
-    newShape.SetRandomPos = () => { svgManager.SetRandomPos(newShape, parent); };
+    newShape.SetRandomPos = () => { svgManager.SetRandomPos(newShape); };
     
     // Get attributes
     newShape.GetAttribute = (attrib) => svgManager.GetAttribute(newShape, attrib);
@@ -472,25 +451,18 @@ let svgManager =
     svgManager.SetY(shape, y);
   },
 
-  SetRandomPos2: function(shape, x, y, padding=0)
+  SetRandomPos: function(shape)
   {
-    console.log(shape.parent);
-    //!!!
-    //! trying to get dimensions of parent here!
-    //! instead of passing in x and y
-    //! 
-    let p = shape.parent.parentElement;
-    //console.log(p.style.width);
+    let parent = shape.parent;
 
-    let maxX = x;
-    let maxY = y;
+    let maxX = parent.width.baseVal.value;
+    let maxY = parent.height.baseVal.value;
     let minX = 0;
     let minY = 0;
     
     let adjustPadding = false;
-    // calculate padding if necessary
-    if(padding == -1)
-    {
+    //if(padding == -1)
+    //{
       if(shape.type == 'circle')
       {
         padding = shape.GetAttribute('r');
@@ -500,9 +472,9 @@ let svgManager =
         padding = shape.GetAttribute('width');
         adjustPadding = true;
       }
-    }
-    if(padding > 0)
-    {
+    //}
+    //if(padding > 0)
+    //{
       maxX -= padding;
       minX += padding;
       if(shape.type == 'rect' && adjustPadding)
@@ -511,27 +483,15 @@ let svgManager =
       };
       maxY -= padding;
       minY += padding;
-    }
+    //}
     // gen random positions
     let nx = generate.Random(maxX, minX);
     let ny = generate.Random(maxY, minY);
     // clamp to canvas dimensions
-    nx = generate.Clamp(nx, 0, x);
-    ny = generate.Clamp(ny, 0, y);
+    nx = generate.Clamp(nx, 0, maxX);
+    ny = generate.Clamp(ny, 0, maxY);
 
     shape.SetPos(nx, ny);
-  },
-
-  SetRandomPos: function(shape, parent)
-  {
-    let box = parent.getBBox();
-    let x = generate.Random(box.width, 0);
-    let y = generate.Random(box.height, 0);
-    
-    // let x = generate.Random(parent.width, 0);
-    // let y = generate.Random(parent.height, 0);
-    shape.SetPos(x, y);
-    //svgManager.SetPos(shape, x, y);
   },
 
   GetX: function(shape)
@@ -735,47 +695,51 @@ let svgManager =
     //!
     if(generate.Percent(parameters.chanceOfTransform))
     {
+      let transformResult = "";
 
+      // Scale X
+      this.Testparams(result, 'scale', parameters.chanceOfScale, parameters.minScale, parameters.maxScale);
+      //console.log(result.scale);
 
+      // Scale Y
+      
+      this.Testparams(result, 'rotate', parameters.chanceOfRotate, parameters.minRotate, parameters.maxRotate);
+      console.log(result.rotate);
+
+      // Skew X
+      
+      // Skew Y
+
+      //! set transformResult here
     }
 
     return result;
+  },
+
+  Testparams: function(target, prop, chance, min, max)
+  {
+    let result = 1;
+    if(generate.Percent(chance))
+    {
+      result = generate.Random(max, min);
+    }
+    if(result != 1)
+    {
+      target[prop] = result;
+    }
   }
 
 }
 
 
-let program =
-{
-  Generate: function()
-  {
-    console.log("Success!");
-  }
-};
-
-
-
-
 // ------------------------
 // TEST
 
-let paletteColors1 =
-[
-  "#ffffeaff",
-  "#d8d8d8ff",
-  "#ed9749ff",
-  "#d3617bff",
-  "#5b8c5aff",
-  "#2384c5fe",
-  "#5c6784ff",
-  "#364958ff",
-  "#444140ff",
-  "#1e1e24ff"
-];
-let palette1 = svgManager.NewPalette(paletteColors1);
+let w = 100;
+let h = 100;
 
 let root = document.querySelector('#root');
-let canv = svgManager.NewCanvas('svg', '50', '50', palette1);
+let canv = svgManager.NewCanvas('svg', w, h);
 root.appendChild(canv.svg);
 
 
@@ -803,6 +767,19 @@ root.appendChild(canv.svg);
 // };
 }
 
+let shapes = [];
 
-let random1 = canv.Random();
+function genshape()
+{
+  let newShape = canv.Random();
+  shapes.push(newShape);
+}
 
+function clearshapes()
+{
+  while(shapes.length > 0)
+  {
+    let shape = shapes.pop();
+    shape.remove();
+  }
+}

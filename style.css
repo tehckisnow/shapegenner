@@ -41,9 +41,13 @@ svg {
 }
 
 #main {
-  width: 70%;
+  /* width: 70%; */
 }
 
-.toggle {
-  padding: 0;
+#content {
+  text-align: center;
+}
+
+.center {
+  text-align: center;
 }
